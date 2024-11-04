@@ -30,21 +30,27 @@ You will need the following parts to mimic this design exactly:
 ### Movement
 1) TT Motor DC 3-6V Gearbox Motor Dual Shaft: https://www.amazon.com/AEDIKO-Motor-Gearbox-Shaft-200RPM/dp/B099Z85573/
 2) 3.3V to 5V Level Shifter: https://www.amazon.com/dp/B07F7W91LC
-3) Caster Wheels: https://www.amazon.com/dp/B0B94NXLRB?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1 
+3) Caster Wheels: https://www.amazon.com/dp/B0CZ9GNXSQ
+4) Accelerometer/Gyroscope: https://www.amazon.com/dp/B00LP25V1A
 
 ### Power
-1) 12V 5200mAh Battery: https://www.amazon.com/dp/B0C242DYT1?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1 
-2) DC 9V 12V 24V to DC 5V 5A Buck Converter: https://www.amazon.com/dp/B07XXWQ49N?ref=ppx_yo2ov_dt_b_fed_asin_title
+1) 12V 5200mAh Battery: https://www.amazon.com/dp/B0C242DYT1
+2) DC 9V 12V 24V to DC 5V 5A Buck Converter: https://www.amazon.com/dp/B07XXWQ49N
 
-### Inputs
+### Imaging
 1) USB Camera: https://www.amazon.com/Ximimark-Camera-Raspberry-Require-Drivers/dp/B07GWP2SGV/
 2) LIDAR: TBD
 
 ## 3-D Prints
-For me, it was helpful to have an easy test board before proceeding with the design of R2D2. 
+For me, it was helpful to have an easy test board before proceeding with the design of R2D2.
 
 ### Test Board
-I cut a 5"x8" wood board. I mounted the two motorized wheels + one caster wheel on the bottom along with the motor controller and level shifter. I mounted the remainder of the hardware on top. 
+I created a circular plastic body with M3-sized holes and two expansion shafts to support multiple layers. For each layer, print:
+- (1) roundBody 
+- (2-3) shaftExpansion
+
+You can access the stl prints in print/test/
+I purchased these M3 screws from Amazon: https://www.amazon.com/dp/B0BMQFHDBH
 
 This 3D print was very helpful to mount the motors to the bottom of the board: https://www.thingiverse.com/thing:1473508 
 
