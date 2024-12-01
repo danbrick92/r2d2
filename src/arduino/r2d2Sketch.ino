@@ -9,6 +9,7 @@
 
   Author: Dan Brickner
 */
+// TODO - Fix compiler errors
 #include "Wire.h"
 #include "TFLI2C.h"
 
