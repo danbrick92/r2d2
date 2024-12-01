@@ -9,7 +9,7 @@
 
   Author: Dan Brickner
 */
-// TODO - Fix compiler errors
+// (motors,set,magnitude=200,direction=96)
 #include "Wire.h"
 #include "TFLI2C.h"
 
@@ -76,17 +76,18 @@ void loop(){
   struct hw123 hw123Data = getHW123Data();
   struct motorState motorStateData = setMotors(newMotorStateData);
   CURRENT_MOTOR_STATE = motorStateData;
+  writeSerialLine("motors", "read", "leftForward=" + String(CURRENT_MOTOR_STATE.leftForward) + ",leftBackward=" + String(CURRENT_MOTOR_STATE.leftBackward) + ",leftSpeed=" + String(CURRENT_MOTOR_STATE.leftSpeed) + ",rightForward=" + String(CURRENT_MOTOR_STATE.rightForward) + ",rightBackward=" + String(CURRENT_MOTOR_STATE.rightBackward) + ",rightSpeed=" + String(CURRENT_MOTOR_STATE.rightSpeed));
   delay(1000); // Adjust delay as needed
 }
 
 void writeSerialLine(String device, String event, String data){
-  Serial.write("(");
-  Serial.write(device);
-  Serial.write(",");
-  Serial.write(event);
-  Serial.write(",\"");
-  Serial.write(data);
-  Serial.writeLn("\")");
+  Serial.print("(");
+  Serial.print(device);
+  Serial.print(",");
+  Serial.print(event);
+  Serial.print(",\"");
+  Serial.print(data);
+  Serial.println("\")");
 }
 
 //----------------------------------
@@ -102,24 +103,13 @@ tfLuna getTFLunaData(){
   // Get data from sensor
   success = tfLunaSensor.getData(distance, strength, temperature, TFLUNA_ADDRESS);
   if (success) {
-    // Print if needed
-    writeSerialLine("tfLuna", "read", "distance=" + distance + ",strength=" + strength + ",temp=" + temperature);
-    // if (SHOULD_PRINT){
-    //   Serial.print("(tfluna,debug,\"distance=");
-    //   Serial.print(distance);
-    //   Serial.print(",strength=");
-    //   Serial.print(strength);
-    //   Serial.print(",temperature=");
-    //   Serial.print(temperature);
-    //   Serial.println("\")");
-    // }
+    // writeSerialLine("tfLuna", "read", "distance=" + String(distance) + ",strength=" + String(strength) + ",temp=" + String(temperature));
   }
   else {
-    writeSerialLine("tfLuna", "error", "error=" + tfLunaSensor.printStatus());
-
-    // Serial.print("(tfluna,error,\"error=");
-    // tfLunaSensor.printStatus(); // Print error status)
-    // Serial.println("\")");
+    // Have to do custom print due to API
+    Serial.print("(tfluna,error,\"error=");
+    tfLunaSensor.printStatus(); // Print error status)
+    Serial.println("\")");
   }
 
   // Return struct
@@ -135,7 +125,7 @@ void initHW123() {
   Wire.write(0x6B); // Power management register
   Wire.write(0x00); // Wake up the sensor
   Wire.endTransmission();
-  Serial.println("(hw123,state,state=\"initialized\")");
+  // writeSerialLine("hw123", "state", "state=initialized");
 }
 
 hw123 getHW123Data(){
@@ -150,7 +140,7 @@ hw123 getHW123Data(){
   Wire.beginTransmission(HW123_ADDRESS);
   Wire.write(0x3B); // Starting register for accelerometer data
   Wire.endTransmission(false); // Keep I2C connection open
-  Wire.requestFrom(HW123_ADDRESS, 14); // Request 14 bytes: Accel(6), Temp(2), Gyro(6)
+  Wire.requestFrom((uint8_t)HW123_ADDRESS, (uint8_t)14); // Request 14 bytes: Accel(6), Temp(2), Gyro(6)
 
   if (Wire.available() == 14) {
     // Read accelerometer data
@@ -167,24 +157,8 @@ hw123 getHW123Data(){
     gyroZ = (Wire.read() << 8) | Wire.read();
   }
 
-  // Print if needed
-  if (SHOULD_PRINT){
-      Serial.print("(hw123,debug,\"accelX=");
-      Serial.print(accelX);
-      Serial.print(",accelY=");
-      Serial.print(accelY);
-      Serial.print(",accelZ=");
-      Serial.print(accelZ);
-      Serial.print(",gyroX=");
-      Serial.print(gyroX);
-      Serial.print(",gyroY=");
-      Serial.print(gyroY);
-      Serial.print(",gyroZ=");
-      Serial.print(gyroZ);
-      Serial.print(",temp=");
-      Serial.print(temp);
-      Serial.println("\")");
-  }
+  // Print
+  // writeSerialLine("hw123", "read", "accelX=" + String(accelX) + ",accelY=" + String(accelY) + ",accelZ=" + String(accelZ) + ",gyroX=" + String(gyroX) + ",gyroY=" + String(gyroY) + ",gyroZ=" + String(gyroZ) + ",temp=" + String(temp));
 
   // Generate struct
   struct hw123 data = {
@@ -315,78 +289,55 @@ struct motorState convertMagDirToMotorState(int magnitude, int direction){
   return data;
 }
 
-struct motorState readMotorState(){
+struct motorState readMotorState() {
   // Start with motorState
   struct motorState motorStateData = CURRENT_MOTOR_STATE;
 
   // Read data from console
-  String data = "";
-  if (Serial.available() > 0){
-    data = Serial.readString();
-  }
-  else {
-    return motorStateData;
-  }
+  if (Serial.available() > 0) {
+    String data = Serial.readString(); // Read full data
+    data.trim(); // Remove any extra spaces or newlines
 
-  // Loop through data
-  String memory = "";
-  int magnitude = 0;
-  int direction = 0;
-  String[] variables = ["device", "event", "magnitude", "direction"];
-  int currentVariable = 0;
-  bool finishedData = false;
-  bool shouldBreak = true;
+    String memory = "";
+    int magnitude = 0;
+    int direction = 0;
+    int currentVariable = 0;
 
-  for (int i = 0; i < data.length(); i++){
-    // Check for important variables
-    if (data[i] == "("){
-      memory = ""
-      currentVariable = 0;
-      shouldBreak = false;
-      magnitude = 0;
-      direction = 0;
-      continue; 
-    }
-    else if (data[i] == "," && shouldBreak == false){
-      // Verify meets criteria
-      if (variables[currentVariable] == "device"){
-        if (memory != "motors"){
-          shouldBreak = true;
-        }
+    // Parse input string
+    for (int i = 0; i < data.length(); i++) {
+      char currentChar = data[i];
+
+      // Handle start of data
+      if (currentChar == '(') {
+        memory = ""; // Reset memory for new input
+        currentVariable = 0;
+        continue;
       }
-      else if (variables[currentVariable] == "event"){
-        if (memory != "set"){
-          shouldBreak = true;
-        }
-      }
-      else if (variables[currentVariable] == "magnitude"){
-        shouldBreak = true;
-        if (memory.startsWith("magnitude=")){
-          magnitude = int(memory.substring(10));
-          shouldBreak = false;
-        }
-      }
-      else if (variables[currentVariable] == "direction"){
-        shouldBreak = true;
-        if (memory.startsWith("direction=")){
-          direction = int(memory.substring(10));
-          shouldBreak = false;
+
+      // Handle end of key-value pair
+      if (currentChar == ',' || currentChar == ')') {
+        // Process memory content
+        if (currentVariable == 0 && memory == "motors") {
+          // Check "device" variable
+          currentVariable++;
+        } else if (currentVariable == 1 && memory == "set") {
+          // Check "event" variable
+          currentVariable++;
+        } else if (currentVariable == 2 && memory.startsWith("magnitude=")) {
+          magnitude = memory.substring(10).toInt(); // Extract magnitude
+          currentVariable++;
+        } else if (currentVariable == 3 && memory.startsWith("direction=")) {
+          direction = memory.substring(10).toInt(); // Extract direction
           motorStateData = convertMagDirToMotorState(magnitude, direction);
         }
+        memory = ""; // Reset memory for next key-value pair
+        continue;
       }
-      continue; 
-    }
-    else if (data[i] == "\")"){
-      continue; 
-    }
-    else if (data[i] == "\""){
-      // dont add to memory
-      continue;
-    }
 
-    memory += data[i]; 
+      // Append character to memory
+      memory += currentChar;
+    }
   }
 
-  // Decide final values to return
   return motorStateData;
 }
