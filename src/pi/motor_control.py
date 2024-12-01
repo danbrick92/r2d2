@@ -32,8 +32,8 @@ def get_input(magnitude: int, direction: int) -> str:
 
 
 def read_serial(arduino: serial.Serial) -> None:
-    data = arduino.readline()
-    print(data)
+    data = arduino.read_all()
+    print(data.decode())
 
 
 def write_movement(arduino: serial.Serial, magnitude: int, direction: int) -> None:
