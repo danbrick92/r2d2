@@ -25,12 +25,12 @@ TFLI2C tfLunaSensor;
 const byte HW123_ADDRESS = 0x68;
 
 // Motor Settings
-const int MOTOR_LEFT_FORW_PIN = 2;
-const int MOTOR_LEFT_BACK_PIN = 3;
-const int MOTOR_LEFT_SPEED_PIN = 9;
-const int MOTOR_RIGHT_FORW_PIN = 4;
-const int MOTOR_RIGHT_BACK_PIN = 5;
-const int MOTOR_RIGHT_SPEED_PIN = 10;
+const int MOTOR_LEFT_FORW_PIN = 5;
+const int MOTOR_LEFT_BACK_PIN = 4;
+const int MOTOR_LEFT_SPEED_PIN = 10;
+const int MOTOR_RIGHT_FORW_PIN = 3;
+const int MOTOR_RIGHT_BACK_PIN = 2;
+const int MOTOR_RIGHT_SPEED_PIN = 9;
 int MOTOR_MIN_SPEED_LEFT = 0;
 int MOTOR_MIN_SPEED_RIGHT = 0;
 
@@ -76,7 +76,7 @@ void loop(){
   struct hw123 hw123Data = getHW123Data();
   struct motorState motorStateData = setMotors(newMotorStateData);
   CURRENT_MOTOR_STATE = motorStateData;
-  writeSerialLine("motors", "read", "leftForward=" + String(CURRENT_MOTOR_STATE.leftForward) + ",leftBackward=" + String(CURRENT_MOTOR_STATE.leftBackward) + ",leftSpeed=" + String(CURRENT_MOTOR_STATE.leftSpeed) + ",rightForward=" + String(CURRENT_MOTOR_STATE.rightForward) + ",rightBackward=" + String(CURRENT_MOTOR_STATE.rightBackward) + ",rightSpeed=" + String(CURRENT_MOTOR_STATE.rightSpeed));
+  writeSerialLine("motors", "read", "leftForward=" + String(motorStateData.leftForward) + ",leftBackward=" + String(motorStateData.leftBackward) + ",leftSpeed=" + String(motorStateData.leftSpeed) + ",rightForward=" + String(motorStateData.rightForward) + ",rightBackward=" + String(motorStateData.rightBackward) + ",rightSpeed=" + String(motorStateData.rightSpeed));
   delay(1000); // Adjust delay as needed
 }
 
@@ -103,7 +103,7 @@ tfLuna getTFLunaData(){
   // Get data from sensor
   success = tfLunaSensor.getData(distance, strength, temperature, TFLUNA_ADDRESS);
   if (success) {
-    // writeSerialLine("tfLuna", "read", "distance=" + String(distance) + ",strength=" + String(strength) + ",temp=" + String(temperature));
+    writeSerialLine("tfLuna", "read", "distance=" + String(distance) + ",strength=" + String(strength) + ",temp=" + String(temperature));
   }
   else {
     // Have to do custom print due to API
@@ -125,7 +125,7 @@ void initHW123() {
   Wire.write(0x6B); // Power management register
   Wire.write(0x00); // Wake up the sensor
   Wire.endTransmission();
-  // writeSerialLine("hw123", "state", "state=initialized");
+  writeSerialLine("hw123", "state", "state=initialized");
 }
 
 hw123 getHW123Data(){
@@ -158,7 +158,7 @@ hw123 getHW123Data(){
   }
 
   // Print
-  // writeSerialLine("hw123", "read", "accelX=" + String(accelX) + ",accelY=" + String(accelY) + ",accelZ=" + String(accelZ) + ",gyroX=" + String(gyroX) + ",gyroY=" + String(gyroY) + ",gyroZ=" + String(gyroZ) + ",temp=" + String(temp));
+  writeSerialLine("hw123", "read", "accelX=" + String(accelX) + ",accelY=" + String(accelY) + ",accelZ=" + String(accelZ) + ",gyroX=" + String(gyroX) + ",gyroY=" + String(gyroY) + ",gyroZ=" + String(gyroZ) + ",temp=" + String(temp));
 
   // Generate struct
   struct hw123 data = {
@@ -235,59 +235,60 @@ struct motorState setMotors(struct motorState m) {
   return updatedState;
 }
 
-struct motorState convertMagDirToMotorState(int magnitude, int direction){
-  struct motorState data = CURRENT_MOTOR_STATE;
+struct motorState convertMagDirToMotorState(int magnitude, int direction) {
+    struct motorState data = CURRENT_MOTOR_STATE;
 
-  // Cap magnitude
-  if (magnitude > 255){
-    magnitude = 255;
-  }
-  else if (magnitude < -255){
-    magnitude = -255;
-  }
+    // Cap magnitude
+    if (magnitude > 255) {
+        magnitude = 255;
+    } else if (magnitude < -255) {
+        magnitude = -255;
+    }
 
-  // Cap direction
-  direction = direction % 360;
-  if (direction < 0){
-    direction += 360;
-  }
+    // Normalize direction to [0, 360)
+    direction = direction % 360;
+    if (direction < 0) {
+        direction += 360;
+    }
 
-  // Determine motor control based on direction and magnitude
-  float leftMotorSpeed, rightMotorSpeed;
+    // Motor speed variables
+    float leftMotorSpeed = 0, rightMotorSpeed = 0;
 
-  if (direction >= 0 && direction <= 90) {
-    // Forward right quadrant
-    float ratio = (float)direction / 90.0;
-    rightMotorSpeed = (float)magnitude;                  // Full speed on the right
-    leftMotorSpeed = (float)magnitude * (1.0 - ratio);  // Reduce speed on the left
-  } else if (direction > 90 && direction <= 180) {
-    // Forward left quadrant
-    float ratio = (float)(direction - 90) / 90.0;
-    leftMotorSpeed = (float)magnitude;                   // Full speed on the left
-    rightMotorSpeed = (float)magnitude * (1.0 - ratio);  // Reduce speed on the right
-  } else if (direction > 180 && direction <= 270) {
-    // Backward left quadrant
-    float ratio = (float)(direction - 180) / 90.0;
-    leftMotorSpeed = -(float)magnitude;                   // Full reverse on the left
-    rightMotorSpeed = -(float)magnitude * (1.0 - ratio);  // Reduce reverse speed on the right
-  } else {
-    // Backward right quadrant
-    float ratio = (float)(direction - 270) / 90.0;
-    rightMotorSpeed = -(float)magnitude;                  // Full reverse on the right
-    leftMotorSpeed = -(float)magnitude * (1.0 - ratio);   // Reduce reverse speed on the left
-  }
+    if (direction >= 0 && direction <= 90) {
+        // Quadrant 1: Forward motion (0-90 degrees)
+        float ratio = (90.0 - direction) / 90.0; // Ratio decreases from 1 to 0
+        leftMotorSpeed = (float)magnitude;
+        rightMotorSpeed = (float)magnitude * ratio;
+    }
+    else if (direction > 90 && direction <= 180){
+      float ratio = 1.0 - ((180.0 - direction) / 90.0);
+      leftMotorSpeed = -(float)magnitude;
+      rightMotorSpeed = -(float)magnitude * ratio;
+    }
+    else if (direction > 180 && direction < 270){
+      float ratio = (270.0 - direction) / 90.0;
+      leftMotorSpeed = -(float)magnitude * ratio;
+      rightMotorSpeed = -(float)magnitude;
+    }
+    else {
+        float ratio = 1.0 - ((360.0 - direction) / 90.0); // Ratio decreases from 1 to 0
+        leftMotorSpeed = (float)magnitude * ratio;
+        rightMotorSpeed = (float)magnitude;
+    }
 
-  // Populate motorState structure
-  data.leftForward = (leftMotorSpeed > 0.0);
-  data.leftBackward = (leftMotorSpeed < 0.0);
-  data.leftSpeed = abs((int)leftMotorSpeed);
+    // Populate motorState structure
+    data.leftForward = (leftMotorSpeed > 0.0);
+    data.leftBackward = (leftMotorSpeed < 0.0);
+    data.leftSpeed = abs((int)leftMotorSpeed);
 
-  data.rightForward = (rightMotorSpeed > 0.0);
-  data.rightBackward = (rightMotorSpeed < 0.0);
-  data.rightSpeed = abs((int)rightMotorSpeed);
+    data.rightForward = (rightMotorSpeed > 0.0);
+    data.rightBackward = (rightMotorSpeed < 0.0);
+    data.rightSpeed = abs((int)rightMotorSpeed);
 
-  return data;
+    return data;
 }
+
+
 
 struct motorState readMotorState() {
   // Start with motorState
