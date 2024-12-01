@@ -36,6 +36,10 @@ You will need the following parts to mimic this design exactly:
 
 ### Power
 1) 12V 5200mAh Battery: https://www.amazon.com/dp/B0C242DYT1
+2) DC 9V 12V 24V to DC 5V 5A Buck Converter Module: https://www.amazon.com/UCTRONICS-Converter-Transformer-Voltage-Regulator/dp/B07XXWQ49N 
+3) A USB C to USB A Cable: https://www.amazon.com/dp/B07DD5YHMH 
+4) 22 awg Wires: https://www.amazon.com/dp/B07TX6BX47
+5) Wire Strippers: https://www.amazon.com/dp/B073YG65N2  
 
 ### Imaging
 1) USB Camera: https://www.amazon.com/Ximimark-Camera-Raspberry-Require-Drivers/dp/B07GWP2SGV/
