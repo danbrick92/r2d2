@@ -253,38 +253,38 @@ struct motorState convertMagDirToMotorState(int magnitude, int direction){
   }
 
   // Determine motor control based on direction and magnitude
-  int leftMotorSpeed, rightMotorSpeed;
+  float leftMotorSpeed, rightMotorSpeed;
 
   if (direction >= 0 && direction <= 90) {
     // Forward right quadrant
     float ratio = (float)direction / 90.0;
-    rightMotorSpeed = magnitude;                  // Full speed on the right
-    leftMotorSpeed = magnitude * (1.0 - ratio);  // Reduce speed on the left
+    rightMotorSpeed = (float)magnitude;                  // Full speed on the right
+    leftMotorSpeed = (float)magnitude * (1.0 - ratio);  // Reduce speed on the left
   } else if (direction > 90 && direction <= 180) {
     // Forward left quadrant
     float ratio = (float)(direction - 90) / 90.0;
-    leftMotorSpeed = magnitude;                   // Full speed on the left
-    rightMotorSpeed = magnitude * (1.0 - ratio);  // Reduce speed on the right
+    leftMotorSpeed = (float)magnitude;                   // Full speed on the left
+    rightMotorSpeed = (float)magnitude * (1.0 - ratio);  // Reduce speed on the right
   } else if (direction > 180 && direction <= 270) {
     // Backward left quadrant
     float ratio = (float)(direction - 180) / 90.0;
-    leftMotorSpeed = -magnitude;                   // Full reverse on the left
-    rightMotorSpeed = -magnitude * (1.0 - ratio);  // Reduce reverse speed on the right
+    leftMotorSpeed = -(float)magnitude;                   // Full reverse on the left
+    rightMotorSpeed = -(float)magnitude * (1.0 - ratio);  // Reduce reverse speed on the right
   } else {
     // Backward right quadrant
     float ratio = (float)(direction - 270) / 90.0;
-    rightMotorSpeed = -magnitude;                  // Full reverse on the right
-    leftMotorSpeed = -magnitude * (1.0 - ratio);   // Reduce reverse speed on the left
+    rightMotorSpeed = -(float)magnitude;                  // Full reverse on the right
+    leftMotorSpeed = -(float)magnitude * (1.0 - ratio);   // Reduce reverse speed on the left
   }
 
   // Populate motorState structure
-  data.leftForward = (leftMotorSpeed > 0);
-  data.leftBackward = (leftMotorSpeed < 0);
-  data.leftSpeed = abs(leftMotorSpeed);
+  data.leftForward = (leftMotorSpeed > 0.0);
+  data.leftBackward = (leftMotorSpeed < 0.0);
+  data.leftSpeed = abs((int)leftMotorSpeed);
 
-  data.rightForward = (rightMotorSpeed > 0);
-  data.rightBackward = (rightMotorSpeed < 0);
-  data.rightSpeed = abs(rightMotorSpeed);
+  data.rightForward = (rightMotorSpeed > 0.0);
+  data.rightBackward = (rightMotorSpeed < 0.0);
+  data.rightSpeed = abs((int)rightMotorSpeed);
 
   return data;
 }
