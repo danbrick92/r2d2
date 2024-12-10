@@ -1,5 +1,11 @@
 # R2D2
-Create yourself an R2D2 robot!
+Create yourself an R2D2 robot! 
+
+# Description
+This robot, assuming all the electronic components are added, will have the ability to not only be remotely controlled, but has imaging, sound, and autonomous navigation. 
+
+# Current State
+Currently, this project is very much a WIP! I will update the README with a working YouTube video to showcase it's ability as a I go.
 
 # Getting Started
 There is a lot to setup with this. Considering this project includes electronics, 3d printing, robotics, software engineering, AI and more, this is both an expensive and complex project. 
@@ -19,7 +25,7 @@ To get started, you will need:
     - Machine Learning and AI
 
 ## Parts
-You will need the following parts to mimic this design exactly:
+You will need the following parts to mimic this design exactly. It is not cheap. 
 
 ### Computing Core
 1) Raspberry Pi 5 8GB: https://www.canakit.com/raspberry-pi-5-8gb.html 
@@ -69,16 +75,60 @@ TBD
 
 ## Electronics
 Here is the breadboard design for setting up this system:
- ![The schematic](schematic/testBoardSchematic.png)
+ ![The schematic](schematic/schematic.png)
 
 I've left the Fritzing project here and the subparts used in case anyone wants to alter the design.
 
 # Installation
+NOTE THAT THIS IS STILL VERY MUCH A WIP. 
 1) Load up your Raspberry PI 5 with a 64-bit installation of Raspberry PI. The version I used was Raspberry PI OS 12.7 64-bit.
 2) Once the PI is booted and ready, copy the contents of this repo into a directory you prefer.
 3) Open a terminal up and cd to the src directory. 
 4) Run ```sudo pi/install.sh``` - this will install Docker, ROS, and a number of other dependencies
 5) Finally, you should be able to run ```sudo run.sh``` - this will run the robotics engine
 
+
 # Running It
 TBD
+
+# Credits
+## 3-D Printed Parts
+### motorMount
+Motor mount by b2vn on Thingiverse: https://www.thingiverse.com/thing:1473508
+This 3D model was created by b2vn on Thingiverse and is licensed under the Creative Commons Attribution-ShareAlike (CC BY-SA) license.
+
+## Fritzing Parts
+### bb-usb-cable
+This part was created by vanepp on the Fritzing Forum.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://forum.fritzing.org/t/usb-cable-in-breadboard-view/11697
+
+### dc_motor_devre
+This part was created by bminaa on the Fritzing website.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://fritzing.org/projects/dc-motor
+
+### generic-ac-power-supply
+This part was created by vanepp on the Fritzing Forum.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://forum.fritzing.org/t/i-need-a-power-supply/8471
+
+### L298N DC motor driver
+This part was created by codefls on the Fritzing Forum.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://forum.fritzing.org/t/h-bridge-with-l298n-motor-driver/7711 
+
+### MPU-6050 Board GY-521
+This part was created by charlesrct on the Fritzing Website.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://fritzing.org/projects/mpu-6050-board-gy-521-acelerometro-y-giroscopio 
+
+### Raspberry-Pi5
+This part was created by vanepp on the Fritzing Forum.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://forum.fritzing.org/t/looking-for-raspberry-pi-5-fritzing-part/21511
+
+### tfluna-lidar
+This part was created by vanepp on the Fritzing Forum.
+The part is shared for public use as part of the open-source Fritzing community.
+Original Source: https://forum.fritzing.org/t/tf-luna-8m-low-cost-distance-sensor/16499 
