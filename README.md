@@ -53,9 +53,11 @@ You will need the following parts to mimic this design exactly. It is not cheap.
 3) LIDAR Cables: https://www.amazon.com/dp/B07PWZTC88 
 
 ## 3-D Prints
-For me, it was helpful to have an easy test board before proceeding with the design of R2D2.
 
 ### Test Board
+
+For me, it was helpful to have an easy test board before proceeding with the design of R2D2.
+
 I created a circular plastic body with M3-sized holes and two expansion shafts to support multiple layers. For each layer, print:
 - (1) roundBody 
 - (2-3) shaftExpansion
@@ -71,7 +73,13 @@ I purchased these M3 screws from Amazon: https://www.amazon.com/dp/B0BMQFHDBH
 This 3D print was very helpful to mount the motors to the bottom of the board: https://www.thingiverse.com/thing:1473508 
 
 ### R2D2
-TBD
+
+There are many good base models online. I found one (located in the credits section) and modified it to fit all the electronic components and screw together nicely.
+
+I used white PETG for the feet, and white PLA for all other components. For the head and other details, I used 220 grit sandpaper and the following paints:
+- Silver: Rust-Oleum Universal Titanium Silver Metallic
+- Blue: Rust-Oleum Metallic Brilliant Metal Finish (Cobalt Blue)
+- Gloss/Sealant: Rust-Oleum Gloss Clear Enamel
 
 ## Electronics
 Here is the breadboard design for setting up this system:
@@ -93,9 +101,21 @@ TBD
 
 # Credits
 ## 3-D Printed Parts
+
+
+### r2d2
+This project is a remix of the R2D2 Alexa Echo Dot 3 Dock created by Gerrylum, licensed under CC BY-NC 4.0: https://www.printables.com/model/35415-screen-accurate-r2d2-alexa-echo-dot-3-dock
+
+I modified the original design by scaling it up, making accomodations for electronic components, and screw holes.
+
+Additional body detail parts were sourced from this remix.
+
 ### motorMount
 Motor mount by b2vn on Thingiverse: https://www.thingiverse.com/thing:1473508
 This 3D model was created by b2vn on Thingiverse and is licensed under the Creative Commons Attribution-ShareAlike (CC BY-SA) license.
+
+## Sounds
+Sounds downloaded from: https://www.101soundboards.com/boards/10634-r2-d2-sounds-star-wars
 
 ## Fritzing Parts
 ### bb-usb-cable
