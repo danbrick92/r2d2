@@ -25,15 +25,18 @@ TFLI2C tfLunaSensor;
 const byte HW123_ADDRESS = 0x68;
 
 // Motor Settings
-const int MOTOR_LEFT_FORW_PIN = 5;
-const int MOTOR_LEFT_BACK_PIN = 4;
+const int MOTOR_LEFT_FORW_PIN = 4;
+const int MOTOR_LEFT_BACK_PIN = 2;
 const int MOTOR_LEFT_SPEED_PIN = 10;
-const int MOTOR_RIGHT_FORW_PIN = 3;
-const int MOTOR_RIGHT_BACK_PIN = 2;
+const int MOTOR_RIGHT_FORW_PIN = 8;
+const int MOTOR_RIGHT_BACK_PIN = 7;
 const int MOTOR_RIGHT_SPEED_PIN = 9;
 int MOTOR_MIN_SPEED_LEFT = 0;
 int MOTOR_MIN_SPEED_RIGHT = 0;
 
+// LEDs
+const int leds[] = {3, 5, 6, 11, 12, 13};
+const int numLeds = sizeof(leds) / sizeof(leds[0]);
 
 struct tfLuna {
   int16_t distance;
@@ -68,9 +71,15 @@ void setup(){
   Wire.begin();
   initHW123();
   initMotors();
+
+  // Set all LED pins as outputs
+  for (int i = 0; i < numLeds; i++) {
+    pinMode(leds[i], OUTPUT);
+  }
 }
 
 void loop(){
+  blinkLEDs();
   struct motorState newMotorStateData = readMotorState();
   struct tfLuna tfLunaData = getTFLunaData();
   struct hw123 hw123Data = getHW123Data();
@@ -88,6 +97,23 @@ void writeSerialLine(String device, String event, String data){
   Serial.print(",\"");
   Serial.print(data);
   Serial.println("\")");
+}
+
+// ---------------------------------
+// LEDs
+// ---------------------------------
+void blinkLEDs() {
+  // Turn all LEDs ON
+  for (int i = 0; i < numLeds; i++) {
+    digitalWrite(leds[i], HIGH);
+  }
+  delay(500); // Wait half a second
+
+  // Turn all LEDs OFF
+  for (int i = 0; i < numLeds; i++) {
+    digitalWrite(leds[i], LOW);
+  }
+  delay(500); // Wait half a second
 }
 
 //----------------------------------

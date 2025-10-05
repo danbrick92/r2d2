@@ -54,6 +54,15 @@ You will need the following parts to mimic this design exactly. It is not cheap.
 
 ## 3-D Prints
 
+### R2D2
+
+There are many good base models online. I found one (located in the credits section) and modified it to fit all the electronic components and screw together nicely.
+
+I used white PETG for the feet, and white PLA for all other components. For the head and other details, I used 220 grit sandpaper and the following paints:
+- Silver: Rust-Oleum Universal Titanium Silver Metallic
+- Blue: Rust-Oleum Metallic Brilliant Metal Finish (Cobalt Blue)
+- Gloss/Sealant: Rust-Oleum Gloss Clear Enamel
+
 ### Test Board
 
 For me, it was helpful to have an easy test board before proceeding with the design of R2D2.
@@ -71,15 +80,6 @@ You can access the stl prints in print/test/
 I purchased these M3 screws from Amazon: https://www.amazon.com/dp/B0BMQFHDBH
 
 This 3D print was very helpful to mount the motors to the bottom of the board: https://www.thingiverse.com/thing:1473508 
-
-### R2D2
-
-There are many good base models online. I found one (located in the credits section) and modified it to fit all the electronic components and screw together nicely.
-
-I used white PETG for the feet, and white PLA for all other components. For the head and other details, I used 220 grit sandpaper and the following paints:
-- Silver: Rust-Oleum Universal Titanium Silver Metallic
-- Blue: Rust-Oleum Metallic Brilliant Metal Finish (Cobalt Blue)
-- Gloss/Sealant: Rust-Oleum Gloss Clear Enamel
 
 ## Electronics
 Here is the breadboard design for setting up this system:
