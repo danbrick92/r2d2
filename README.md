@@ -114,6 +114,14 @@ Additional body detail parts were sourced from this remix.
 Motor mount by b2vn on Thingiverse: https://www.thingiverse.com/thing:1473508
 This 3D model was created by b2vn on Thingiverse and is licensed under the Creative Commons Attribution-ShareAlike (CC BY-SA) license.
 
+
+### 28BYJ-48 Motor Welle Shaft Crankshaft Extension
+https://www.thingiverse.com/thing:6189216/files
+
+### 28BYJ-48 Mounting Bracket
+https://www.thingiverse.com/thing:423357/files
+
+
 ## Sounds
 Sounds downloaded from: https://www.101soundboards.com/boards/10634-r2-d2-sounds-star-wars
 
