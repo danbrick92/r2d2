@@ -2,20 +2,37 @@
   This sketch performs the following functions
   - Reads LIDAR data from the TF Luna sensor
   - Reads Accelerometer & Gyro data from HW-123
+  - Read and Write multi-color leds
   - Allows for control of wheels (motors)
+  - Control stepper motors
 
   The code is setup minimally, to allow the Pi full control
   This includes calibration
 
+  **NOTE: Make sure to install TFLI2C.h library **
+
   Author: Dan Brickner
 */
 // (motors,set,magnitude=200,direction=96)
+
+#include <Stepper.h>
 #include "Wire.h"
 #include "TFLI2C.h"
 
 // Common Settings
 const bool SHOULD_PRINT = true;
-const int SERIAL_BAUD = 9600;
+// const int SERIAL_BAUD = 9600;
+const int SERIAL_BAUD = 115200;
+
+// Front LED Settings
+const int FRONT_LED_R_PIN = 3;
+const int FRONT_LED_G_PIN = 5;
+const int FRONT_LED_B_PIN = 6;
+
+// Back LED Settings
+const int BACK_LED_R_PIN = 11;
+const int BACK_LED_G_PIN = 12;
+const int BACK_LED_B_PIN = 13;
 
 // TFLuna Settings
 const byte TFLUNA_ADDRESS = 0x10;
@@ -34,17 +51,25 @@ const int MOTOR_RIGHT_SPEED_PIN = 9;
 int MOTOR_MIN_SPEED_LEFT = 0;
 int MOTOR_MIN_SPEED_RIGHT = 0;
 
-// LEDs
-const int leds[] = {3, 5, 6, 11, 12, 13};
-const int numLeds = sizeof(leds) / sizeof(leds[0]);
+// Stepper
+#define STEPS_PER_REV 2048   // 28BYJ-48 has ~2048 steps per full rotation
+Stepper myStepper(STEPS_PER_REV, A0, A2, A1, A3);
+// note the slightly odd order: (IN1, IN3, IN2, IN4) for correct sequence
 
-struct tfLuna {
+
+// Data Structures
+struct ledState {
+  int red;
+  int green;
+  int blue;
+};
+struct tfLunaState {
   int16_t distance;
   int16_t strength;
   int16_t temperature;
   bool success;
 };
-struct hw123 {
+struct hw123State {
   int16_t accelX;
   int16_t accelY;
   int16_t accelZ;
@@ -61,7 +86,19 @@ struct motorState {
   bool rightBackward;
   int rightSpeed;
 };
-struct motorState CURRENT_MOTOR_STATE = {false, false, 0, false, false, 0};
+struct stepperState {
+  int rpm_speed;
+  int current_step;
+};
+
+
+// Current States
+struct ledState FRONT_LED_STATE = {0, 0, 0};
+struct ledState BACK_LED_STATE = {0, 0, 0};
+struct tfLunaState TFLUNA_STATE = {0, 0, 0, false};
+struct hw123State HW123_STATE = {0, 0, 0, 0, 0, 0, 0};
+struct motorState MOTOR_STATE = {false, false, 0, false, false, 0};
+struct stepperState STEPPER_STATE = {10, 0};
 
 //----------------------------------
 // Common
@@ -69,57 +106,178 @@ struct motorState CURRENT_MOTOR_STATE = {false, false, 0, false, false, 0};
 void setup(){
   Serial.begin(SERIAL_BAUD);
   Wire.begin();
-  initHW123();
-  initMotors();
 
-  // Set all LED pins as outputs
-  for (int i = 0; i < numLeds; i++) {
-    pinMode(leds[i], OUTPUT);
+  initFrontLED();
+  initBackLED();
+  // no intialization needed for TFLuna
+  inithw123();
+  initMotors();
+  initStepperMotor();
+}
+
+void loop() {
+  // Check for incoming commands
+  while (Serial.available() > 0) {
+    String line = Serial.readStringUntil('\n');
+    if (line.length() > 0) {
+      routeCommand(line);
+    }
+    yield();
+  }
+
+  // Send sensor data
+  static unsigned long lastSend = 0;
+  if (millis() - lastSend > 20) {  // every 20 ms = 50 Hz
+    frontLEDRead();
+    backLEDRead();
+    tfLunaRead();
+    hw123Read();
+    motorStateRead();
+    stepperMotorRead();
   }
 }
 
-void loop(){
-  blinkLEDs();
-  struct motorState newMotorStateData = readMotorState();
-  struct tfLuna tfLunaData = getTFLunaData();
-  struct hw123 hw123Data = getHW123Data();
-  struct motorState motorStateData = setMotors(newMotorStateData);
-  CURRENT_MOTOR_STATE = motorStateData;
-  writeSerialLine("motors", "read", "leftForward=" + String(motorStateData.leftForward) + ",leftBackward=" + String(motorStateData.leftBackward) + ",leftSpeed=" + String(motorStateData.leftSpeed) + ",rightForward=" + String(motorStateData.rightForward) + ",rightBackward=" + String(motorStateData.rightBackward) + ",rightSpeed=" + String(motorStateData.rightSpeed));
-  delay(1000); // Adjust delay as needed
+void routeCommand(String line){
+  // Send command to the correct function
+  line.trim();
+
+  char device = line.charAt(0);
+  char event = line.charAt(1);
+  String data = line.substring(2);
+
+  if (device == 'f' && event == 'w'){  // front led write
+    frontLEDWrite(data);
+  }
+  else if (device == 'b' && event == 'w'){  // back led write
+    backLEDWrite(data);
+  }
+  else if (device == 'm' && event == 'w'){  // wheel motor write
+    motorWrite(data);
+  }
+  else if (device == 's' && event == 'w'){  // head stepper motor write
+    stepperMotorWrite(data);
+  }
 }
 
 void writeSerialLine(String device, String event, String data){
-  Serial.print("(");
+  // Streamlined interface for writing to serial
   Serial.print(device);
-  Serial.print(",");
   Serial.print(event);
-  Serial.print(",\"");
-  Serial.print(data);
-  Serial.println("\")");
+  Serial.println(data);
 }
 
 // ---------------------------------
-// LEDs
+// Front LED
 // ---------------------------------
-void blinkLEDs() {
-  // Turn all LEDs ON
-  for (int i = 0; i < numLeds; i++) {
-    digitalWrite(leds[i], HIGH);
-  }
-  delay(500); // Wait half a second
+void initFrontLED(){
+  // Initialize
+  pinMode(FRONT_LED_R_PIN, OUTPUT);
+  pinMode(FRONT_LED_G_PIN, OUTPUT);
+  pinMode(FRONT_LED_B_PIN, OUTPUT);
+  struct ledState newState = {0, 0, 0};
+  frontLEDSetColor(newState);
+}
 
-  // Turn all LEDs OFF
-  for (int i = 0; i < numLeds; i++) {
-    digitalWrite(leds[i], LOW);
+void frontLEDSetColor(struct ledState colors) {
+  analogWrite(FRONT_LED_R_PIN, colors.red);
+  analogWrite(FRONT_LED_G_PIN, colors.green);
+  analogWrite(FRONT_LED_B_PIN, colors.blue);
+  FRONT_LED_STATE = {colors.red, colors.green, colors.blue};
+}
+
+void frontLEDWrite(String data){
+  // Parse data points
+  data.trim();
+  struct ledState newState = {0, 0, 0};
+
+  // Temporary variables
+  int r = 0, g = 0, b = 0;
+
+  // Use sscanf to parse three integers separated by spaces
+  if (sscanf(data.c_str(), "%d %d %d", &r, &g, &b) == 3) {
+    // Clamp values to 0-255 just in case
+    newState.red = constrain(r, 0, 255);
+    newState.green = constrain(g, 0, 255);
+    newState.blue = constrain(b, 0, 255);
+    frontLEDSetColor(newState);
+  } else {
+    String errorMsg = "Invalid LED command: " + data;
+    writeSerialLine("f", "e", errorMsg);
   }
-  delay(500); // Wait half a second
+}
+
+void frontLEDRead(){
+  writeSerialLine("f", "r", String(FRONT_LED_STATE.red) + " " + String(FRONT_LED_STATE.green) + " " + String(FRONT_LED_STATE.blue));
+}
+
+// ---------------------------------
+// Back LED
+// ---------------------------------
+void initBackLED(){
+  pinMode(BACK_LED_R_PIN, OUTPUT);
+  pinMode(BACK_LED_G_PIN, OUTPUT);
+  pinMode(BACK_LED_B_PIN, OUTPUT);
+  struct ledState newState = {0, 0, 0};
+  backLEDSetColor(newState);
+}
+
+void backLEDSetColor(struct ledState colors) {
+  analogWrite(BACK_LED_R_PIN, colors.red);
+  analogWrite(BACK_LED_G_PIN, colors.green);
+  analogWrite(BACK_LED_B_PIN, colors.blue);
+  BACK_LED_STATE = {colors.red, colors.green, colors.blue};
+}
+
+void backLEDWrite(String data){
+  // Parse data points
+  data.trim();
+  struct ledState newState = {0, 0, 0};
+
+  // Temporary variables
+  int r = 0, g = 0, b = 0;
+
+  // Use sscanf to parse three integers separated by spaces
+  if (sscanf(data.c_str(), "%d %d %d", &r, &g, &b) == 3) {
+    // Clamp values to 0-255 just in case
+    newState.red = constrain(r, 0, 255);
+    newState.green = constrain(g, 0, 255);
+    newState.blue = constrain(b, 0, 255);
+
+    // This LED is binary - 0 or 255
+    if (newState.red < 128){
+      newState.red = 0;
+    }
+    else {
+      newState.red = 255;
+    }
+    if (newState.green < 128){
+      newState.green = 0;
+    }
+    else {
+      newState.green = 255;
+    }
+    if (newState.blue < 128){
+      newState.blue = 0;
+    }
+    else {
+      newState.blue = 255;
+    }
+
+    backLEDSetColor(newState);
+  } else {
+    String errorMsg = "Invalid LED command: " + data;
+    writeSerialLine("f", "e", errorMsg);
+  }
+}
+
+void backLEDRead(){
+  writeSerialLine("b", "r", String(BACK_LED_STATE.red) + " " + String(BACK_LED_STATE.green) + " " + String(BACK_LED_STATE.blue));
 }
 
 //----------------------------------
 // TF Luna
 //----------------------------------
-tfLuna getTFLunaData(){
+void tfLunaRead(){
   // Initiate variables
   int16_t distance;
   int16_t strength;
@@ -128,33 +286,29 @@ tfLuna getTFLunaData(){
 
   // Get data from sensor
   success = tfLunaSensor.getData(distance, strength, temperature, TFLUNA_ADDRESS);
+  TFLUNA_STATE = {distance, strength, temperature, success};
   if (success) {
-    writeSerialLine("tfLuna", "read", "distance=" + String(distance) + ",strength=" + String(strength) + ",temp=" + String(temperature));
+    writeSerialLine("t", "r", String(distance) + " " + String(strength) + " " + String(temperature));
   }
   else {
     // Have to do custom print due to API
-    Serial.print("(tfluna,error,\"error=");
-    tfLunaSensor.printStatus(); // Print error status)
-    Serial.println("\")");
+    Serial.print("te");
+    tfLunaSensor.printStatus(); // Print error status
+    Serial.println("");
   }
-
-  // Return struct
-  struct tfLuna data = {distance, strength, temperature, success};
-  return data;
 }
 
 //----------------------------------
 // HW-123 (Accel/Gyro)
 //----------------------------------
-void initHW123() {
+void inithw123() {
   Wire.beginTransmission(HW123_ADDRESS);
   Wire.write(0x6B); // Power management register
   Wire.write(0x00); // Wake up the sensor
   Wire.endTransmission();
-  writeSerialLine("hw123", "state", "state=initialized");
 }
 
-hw123 getHW123Data(){
+void hw123Read(){
   int16_t accelX;
   int16_t accelY;
   int16_t accelZ;
@@ -183,17 +337,10 @@ hw123 getHW123Data(){
     gyroZ = (Wire.read() << 8) | Wire.read();
   }
 
+  HW123_STATE = {accelX, accelY, accelZ, gyroX, gyroY, gyroZ, temp};
+
   // Print
-  writeSerialLine("hw123", "read", "accelX=" + String(accelX) + ",accelY=" + String(accelY) + ",accelZ=" + String(accelZ) + ",gyroX=" + String(gyroX) + ",gyroY=" + String(gyroY) + ",gyroZ=" + String(gyroZ) + ",temp=" + String(temp));
-
-  // Generate struct
-  struct hw123 data = {
-    accelX, accelY, accelZ,
-    gyroX, gyroY, gyroZ,
-    temp
-  };
-
-  return data;
+  writeSerialLine("h", "r", String(accelX) + " " + String(accelY) + " " + String(accelZ) + " " + String(gyroX) + " " + String(gyroY) + " " + String(gyroZ) + " " + String(temp));
 }
 
 //----------------------------------
@@ -208,163 +355,85 @@ void initMotors() {
   pinMode(MOTOR_RIGHT_SPEED_PIN, OUTPUT);
 }
 
-struct motorState setMotors(struct motorState m) {
-  // Store end motor state
-  struct motorState updatedState;
+void motorWrite(String data){
+  data.trim();
+  struct motorState newState = {false, false, 0, false, false, 0};
 
-  // Set motor speeds
-  analogWrite(MOTOR_LEFT_SPEED_PIN, m.leftSpeed);
-  updatedState.leftSpeed = m.leftSpeed;
-  analogWrite(MOTOR_RIGHT_SPEED_PIN, m.rightSpeed);
-  updatedState.rightSpeed = m.rightSpeed;
- 
-  // Left Motor
-  if (m.leftForward){
-    digitalWrite(MOTOR_LEFT_FORW_PIN, HIGH);
-    digitalWrite(MOTOR_LEFT_BACK_PIN, LOW);
-    updatedState.leftForward = true;
-    updatedState.leftBackward = false;
-  }
-  else if (m.leftBackward) {
-    digitalWrite(MOTOR_LEFT_FORW_PIN, LOW);
-    digitalWrite(MOTOR_LEFT_BACK_PIN, HIGH);
-    updatedState.leftForward = false;
-    updatedState.leftBackward = true;
+  // Temporary variables
+  int lf = 0, lb = 0, ls = 0, rf = 0, rb = 0, rs = 0;
+
+  // Use sscanf to parse three integers separated by spaces
+  if (sscanf(data.c_str(), "%d %d %d %d %d %d", &lf, &lb, &ls, &rf, &rb, &rs) == 6) {
+    // Assign and constrain
+    newState.leftForward = (lf != 0);
+    newState.leftBackward = (lb != 0);
+    newState.leftSpeed = constrain(ls, 0, 255);
+    newState.rightForward = (rf != 0);
+    newState.rightBackward = (rb != 0);
+    newState.rightSpeed = constrain(rs, 0, 255);
+
+    // Ensure bad states aren't possible
+    if (newState.leftForward && newState.leftBackward){
+      newState.leftForward = false;
+      newState.leftBackward = false;
+    }
+    if (newState.rightForward && newState.rightBackward){
+      newState.rightForward = false;
+      newState.rightBackward = false;
+    }
+
+    // Write to pins
+    digitalWrite(MOTOR_LEFT_FORW_PIN, newState.leftForward);
+    digitalWrite(MOTOR_LEFT_BACK_PIN, newState.leftBackward);
+    analogWrite(MOTOR_LEFT_SPEED_PIN, newState.leftSpeed);
+    digitalWrite(MOTOR_RIGHT_FORW_PIN, newState.rightForward);
+    digitalWrite(MOTOR_RIGHT_BACK_PIN, newState.rightBackward);
+    analogWrite(MOTOR_RIGHT_SPEED_PIN, newState.rightSpeed);
+
+    // Update State
+    MOTOR_STATE = newState;
   }
   else {
-    digitalWrite(MOTOR_LEFT_FORW_PIN, LOW);
-    digitalWrite(MOTOR_LEFT_BACK_PIN, LOW);
-    updatedState.leftForward = false;
-    updatedState.leftBackward = false;
+    String errorMsg = "Invalid Motor command: " + data;
+    writeSerialLine("m", "e", errorMsg);
   }
-
-  // Right Motor
-  if (m.rightForward){
-    digitalWrite(MOTOR_RIGHT_FORW_PIN, HIGH);
-    digitalWrite(MOTOR_RIGHT_BACK_PIN, LOW);
-    updatedState.rightForward = true;
-    updatedState.rightBackward = false;
-  }
-  else if (m.rightBackward) {
-    digitalWrite(MOTOR_RIGHT_FORW_PIN, LOW);
-    digitalWrite(MOTOR_RIGHT_BACK_PIN, HIGH);
-    updatedState.rightForward = false;
-    updatedState.rightBackward = true;
-  }
-  else {
-    digitalWrite(MOTOR_RIGHT_FORW_PIN, LOW);
-    digitalWrite(MOTOR_RIGHT_BACK_PIN, LOW);
-    updatedState.rightForward = false;
-    updatedState.rightBackward = false;
-  }
-
-  return updatedState;
 }
 
-struct motorState convertMagDirToMotorState(int magnitude, int direction) {
-    struct motorState data = CURRENT_MOTOR_STATE;
+void motorStateRead(){
+  writeSerialLine("m", "r", String(MOTOR_STATE.leftForward) + " " + String(MOTOR_STATE.leftBackward) + " " + String(MOTOR_STATE.leftSpeed) + " " + String(MOTOR_STATE.rightForward) + " " + String(MOTOR_STATE.rightBackward) + " " + String(MOTOR_STATE.rightSpeed));
+}
 
-    // Cap magnitude
-    if (magnitude > 255) {
-        magnitude = 255;
-    } else if (magnitude < -255) {
-        magnitude = -255;
-    }
+//----------------------------------
+// Head Stepper Motor
+//----------------------------------
+void initStepperMotor() {
+  myStepper.setSpeed(10);
+}
 
-    // Normalize direction to [0, 360)
-    direction = direction % 360;
-    if (direction < 0) {
-        direction += 360;
-    }
+void stepperMotorRead(){
+    writeSerialLine("s", "r", String(STEPPER_STATE.rpm_speed) + " " + String(STEPPER_STATE.current_step));
+}
 
-    // Motor speed variables
-    float leftMotorSpeed = 0, rightMotorSpeed = 0;
+void stepperMotorWrite(String data){
+    data.trim();
+    struct stepperState newState = {0, 0};
 
-    if (direction >= 0 && direction <= 90) {
-        // Quadrant 1: Forward motion (0-90 degrees)
-        float ratio = (90.0 - direction) / 90.0; // Ratio decreases from 1 to 0
-        leftMotorSpeed = (float)magnitude;
-        rightMotorSpeed = (float)magnitude * ratio;
-    }
-    else if (direction > 90 && direction <= 180){
-      float ratio = 1.0 - ((180.0 - direction) / 90.0);
-      leftMotorSpeed = -(float)magnitude;
-      rightMotorSpeed = -(float)magnitude * ratio;
-    }
-    else if (direction > 180 && direction < 270){
-      float ratio = (270.0 - direction) / 90.0;
-      leftMotorSpeed = -(float)magnitude * ratio;
-      rightMotorSpeed = -(float)magnitude;
+    // Temporary variables
+    int speed = 0, steps = 0;
+
+    // Use sscanf to parse three integers separated by spaces
+    if (sscanf(data.c_str(), "%d %d", &speed, &steps) == 2) {
+      newState.rpm_speed = constrain(speed, 0, 20);  // clamp to a safe RPM range
+      newState.current_step = constrain(steps, -100, 100);
+
+      myStepper.setSpeed(newState.rpm_speed);
+      // Move the motor (blocking call)
+      if (newState.current_step != 0) {
+        myStepper.step(newState.current_step);
+      }
     }
     else {
-        float ratio = 1.0 - ((360.0 - direction) / 90.0); // Ratio decreases from 1 to 0
-        leftMotorSpeed = (float)magnitude * ratio;
-        rightMotorSpeed = (float)magnitude;
+      String errorMsg = "Invalid Stepper command: " + data;
+      writeSerialLine("s", "e", errorMsg);
     }
-
-    // Populate motorState structure
-    data.leftForward = (leftMotorSpeed > 0.0);
-    data.leftBackward = (leftMotorSpeed < 0.0);
-    data.leftSpeed = abs((int)leftMotorSpeed);
-
-    data.rightForward = (rightMotorSpeed > 0.0);
-    data.rightBackward = (rightMotorSpeed < 0.0);
-    data.rightSpeed = abs((int)rightMotorSpeed);
-
-    return data;
-}
-
-
-
-struct motorState readMotorState() {
-  // Start with motorState
-  struct motorState motorStateData = CURRENT_MOTOR_STATE;
-
-  // Read data from console
-  if (Serial.available() > 0) {
-    String data = Serial.readString(); // Read full data
-    data.trim(); // Remove any extra spaces or newlines
-
-    String memory = "";
-    int magnitude = 0;
-    int direction = 0;
-    int currentVariable = 0;
-
-    // Parse input string
-    for (int i = 0; i < data.length(); i++) {
-      char currentChar = data[i];
-
-      // Handle start of data
-      if (currentChar == '(') {
-        memory = ""; // Reset memory for new input
-        currentVariable = 0;
-        continue;
-      }
-
-      // Handle end of key-value pair
-      if (currentChar == ',' || currentChar == ')') {
-        // Process memory content
-        if (currentVariable == 0 && memory == "motors") {
-          // Check "device" variable
-          currentVariable++;
-        } else if (currentVariable == 1 && memory == "set") {
-          // Check "event" variable
-          currentVariable++;
-        } else if (currentVariable == 2 && memory.startsWith("magnitude=")) {
-          magnitude = memory.substring(10).toInt(); // Extract magnitude
-          currentVariable++;
-        } else if (currentVariable == 3 && memory.startsWith("direction=")) {
-          direction = memory.substring(10).toInt(); // Extract direction
-          motorStateData = convertMagDirToMotorState(magnitude, direction);
-        }
-        memory = ""; // Reset memory for next key-value pair
-        continue;
-      }
-
-      // Append character to memory
-      memory += currentChar;
-    }
-  }
-
-  return motorStateData;
 }
