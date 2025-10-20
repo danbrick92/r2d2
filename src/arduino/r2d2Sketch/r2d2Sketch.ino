@@ -22,17 +22,17 @@
 // Common Settings
 const bool SHOULD_PRINT = true;
 // const int SERIAL_BAUD = 9600;
-const int SERIAL_BAUD = 115200;
+const unsigned long SERIAL_BAUD = 115200;
 
 // Front LED Settings
 const int FRONT_LED_R_PIN = 3;
-const int FRONT_LED_G_PIN = 5;
-const int FRONT_LED_B_PIN = 6;
+const int FRONT_LED_G_PIN = 6;
+const int FRONT_LED_B_PIN = 5;
 
 // Back LED Settings
 const int BACK_LED_R_PIN = 11;
-const int BACK_LED_G_PIN = 12;
-const int BACK_LED_B_PIN = 13;
+const int BACK_LED_G_PIN = 13;
+const int BACK_LED_B_PIN = 12;
 
 // TFLuna Settings
 const byte TFLUNA_ADDRESS = 0x10;
