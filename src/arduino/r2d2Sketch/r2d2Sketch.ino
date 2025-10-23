@@ -21,8 +21,7 @@
 
 // Common Settings
 const bool SHOULD_PRINT = true;
-// const int SERIAL_BAUD = 9600;
-const unsigned long SERIAL_BAUD = 115200;
+const unsigned long SERIAL_BAUD = 38400;
 
 // Front LED Settings
 const int FRONT_LED_R_PIN = 3;
@@ -79,11 +78,9 @@ struct hw123State {
   int16_t temp;
 };
 struct motorState {
-  bool leftForward;
-  bool leftBackward;
+  bool forward;
+  bool backward;
   int leftSpeed;
-  bool rightForward;
-  bool rightBackward;
   int rightSpeed;
 };
 struct stepperState {
@@ -97,7 +94,7 @@ struct ledState FRONT_LED_STATE = {0, 0, 0};
 struct ledState BACK_LED_STATE = {0, 0, 0};
 struct tfLunaState TFLUNA_STATE = {0, 0, 0, false};
 struct hw123State HW123_STATE = {0, 0, 0, 0, 0, 0, 0};
-struct motorState MOTOR_STATE = {false, false, 0, false, false, 0};
+struct motorState MOTOR_STATE = {false, false, 0, 0};
 struct stepperState STEPPER_STATE = {10, 0};
 
 //----------------------------------
@@ -127,7 +124,7 @@ void loop() {
 
   // Send sensor data
   static unsigned long lastSend = 0;
-  if (millis() - lastSend > 20) {  // every 20 ms = 50 Hz
+  if (millis() - lastSend > 50) {  // every 50 ms = 20 Hz
     frontLEDRead();
     backLEDRead();
     tfLunaRead();
@@ -357,37 +354,31 @@ void initMotors() {
 
 void motorWrite(String data){
   data.trim();
-  struct motorState newState = {false, false, 0, false, false, 0};
+  struct motorState newState = {false, false, 0, 0};
 
   // Temporary variables
-  int lf = 0, lb = 0, ls = 0, rf = 0, rb = 0, rs = 0;
+  int f = 0, b = 0, ls = 0, rs = 0;
 
   // Use sscanf to parse three integers separated by spaces
-  if (sscanf(data.c_str(), "%d %d %d %d %d %d", &lf, &lb, &ls, &rf, &rb, &rs) == 6) {
+  if (sscanf(data.c_str(), "%d %d %d %d", &f, &b, &ls, &rs) == 4) {
     // Assign and constrain
-    newState.leftForward = (lf != 0);
-    newState.leftBackward = (lb != 0);
-    newState.leftSpeed = constrain(ls, 0, 255);
-    newState.rightForward = (rf != 0);
-    newState.rightBackward = (rb != 0);
-    newState.rightSpeed = constrain(rs, 0, 255);
+    newState.forward = (f != 0);
+    newState.backward = (b != 0);
+    newState.leftSpeed = constrain(ls, 0, 250);
+    newState.rightSpeed = constrain(rs, 0, 250);
 
     // Ensure bad states aren't possible
-    if (newState.leftForward && newState.leftBackward){
-      newState.leftForward = false;
-      newState.leftBackward = false;
-    }
-    if (newState.rightForward && newState.rightBackward){
-      newState.rightForward = false;
-      newState.rightBackward = false;
+    if (newState.forward && newState.backward){
+      newState.forward = false;
+      newState.backward = false;
     }
 
     // Write to pins
-    digitalWrite(MOTOR_LEFT_FORW_PIN, newState.leftForward);
-    digitalWrite(MOTOR_LEFT_BACK_PIN, newState.leftBackward);
+    digitalWrite(MOTOR_LEFT_FORW_PIN, newState.forward);
+    digitalWrite(MOTOR_LEFT_BACK_PIN, newState.backward);
     analogWrite(MOTOR_LEFT_SPEED_PIN, newState.leftSpeed);
-    digitalWrite(MOTOR_RIGHT_FORW_PIN, newState.rightForward);
-    digitalWrite(MOTOR_RIGHT_BACK_PIN, newState.rightBackward);
+    digitalWrite(MOTOR_RIGHT_FORW_PIN, newState.forward);
+    digitalWrite(MOTOR_RIGHT_BACK_PIN, newState.backward);
     analogWrite(MOTOR_RIGHT_SPEED_PIN, newState.rightSpeed);
 
     // Update State
@@ -400,7 +391,7 @@ void motorWrite(String data){
 }
 
 void motorStateRead(){
-  writeSerialLine("m", "r", String(MOTOR_STATE.leftForward) + " " + String(MOTOR_STATE.leftBackward) + " " + String(MOTOR_STATE.leftSpeed) + " " + String(MOTOR_STATE.rightForward) + " " + String(MOTOR_STATE.rightBackward) + " " + String(MOTOR_STATE.rightSpeed));
+  writeSerialLine("m", "r", String(MOTOR_STATE.forward) + " " + String(MOTOR_STATE.backward) + " " + String(MOTOR_STATE.leftSpeed) + " " + String(MOTOR_STATE.rightSpeed));
 }
 
 //----------------------------------
@@ -428,7 +419,7 @@ void stepperMotorWrite(String data){
 
       myStepper.setSpeed(newState.rpm_speed);
       // Move the motor (blocking call)
-      if (newState.current_step != 0) {
+      if (newState.current_step != 0 && newState.rpm_speed > 0) {
         myStepper.step(newState.current_step);
       }
     }
