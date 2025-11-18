@@ -1,0 +1,21 @@
+{
+  "name": "ROS2 Jazzy Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "runArgs": [
+    "--privileged",
+    "--env", "DISPLAY=${localEnv:DISPLAY}",
+    "--env", "QT_X11_NO_MITSHM=1",
+    "--volume", "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+  ],
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "QT_X11_NO_MITSHM": "1"
+  },
+  "workspaceFolder": "/workspaces/ros2_ws",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  }
+}
