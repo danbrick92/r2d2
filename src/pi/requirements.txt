@@ -1,2 +1,2 @@
-pyserial 
-getch
+pyserial
+paho-mqtt
