@@ -1,14 +1,20 @@
 import asyncio
+from logging import Logger
 import time
 from copy import deepcopy
 from typing import Dict
+from r2d2.serial_readers.base_serial_reader import BaseSerialReader
 
 
-class ArduinoMockSerialReader:
+class ArduinoMockSerialReader(BaseSerialReader):
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.rate = 0.5
+    def __init__(
+        self,
+        logger: Logger,
+        rate: float
+    ) -> None:
+        super().__init__(logger)
+        self.rate = rate
         self.queue: Dict[float, str] = {}
 
     async def start(self) -> None:
@@ -53,3 +59,7 @@ class ArduinoMockSerialReader:
             data += v
             del self.queue[k]
         return data
+
+    async def catchup(self) -> None:
+        self.log(message="Catching up by clearing queue")
+        self.queue = {}

@@ -9,6 +9,8 @@
         "--disable=missing-module-docstring",
         "--disable=missing-class-docstring",
         "--disable=missing-function-docstring",
-        "--disable=too-few-public-methods"
+        "--disable=too-few-public-methods",
+        "--disable=too-many-arguments",
+        "--disable=too-many-positional-arguments"
     ]
 }

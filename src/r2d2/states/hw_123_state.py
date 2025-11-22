@@ -7,7 +7,7 @@ class Vector3(BaseModel):
     z: int = Field(..., description="Z-axis raw value")
 
 
-class Hw123(BaseModel):
+class Hw123State(BaseModel):
     acceleration: Vector3 = Field(
         ..., description="3-axis acceleration in mg (milligravity units)"
     )

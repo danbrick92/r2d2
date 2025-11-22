@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class TfLuna(BaseModel):
+class TfLunaState(BaseModel):
     distance: int = Field(..., description="Distance in centimeters (cm)")
     strength: int = Field(..., description="Signal strength (unitless ADC value)")
     temperature: int = Field(
