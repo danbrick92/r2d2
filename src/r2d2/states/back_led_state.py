@@ -1,20 +1,13 @@
-from pydantic import BaseModel, Field
+from typing import cast
 
-from r2d2.states.serial_initializer import SerialInitializer
+from r2d2.states.base_led_state import BaseLedState
 
 
-class BackLedState(BaseModel, SerialInitializer):
-    red: int = Field(..., description="Power of the red led")
-    green: int = Field(..., description="Power of the green led")
-    blue: int = Field(..., description="Power of the blue led")
-
+class BackLedState(BaseLedState):
     @staticmethod
     def initialize_from_serial(serial_line: str) -> "BackLedState":
         try:
-            s = serial_line[2:]
-            parts = s.split(" ")
-            if len(parts) != 3:
-                raise ValueError(f"incorrect num parts: {len(parts)}")
-            return BackLedState(red=int(parts[0]), green=int(parts[1]), blue=int(parts[2]))
+            base_led = BaseLedState.initialize_from_serial(serial_line)
+            return cast(BackLedState, base_led)
         except Exception as e:
             raise ValueError(f"cannot interpret serial line: {serial_line}") from e

@@ -1,7 +1,13 @@
-from pydantic import BaseModel, Field
+from typing import cast
+
+from r2d2.states.base_led_state import BaseLedState
 
 
-class FrontLedState(BaseModel):
-    red: int = Field(..., description="Power of the red led")
-    green: int = Field(..., description="Power of the green led")
-    blue: int = Field(..., description="Power of the blue led")
+class FrontLedState(BaseLedState):
+    @staticmethod
+    def initialize_from_serial(serial_line: str) -> "FrontLedState":
+        try:
+            base_led = BaseLedState.initialize_from_serial(serial_line)
+            return cast(FrontLedState, base_led)
+        except Exception as e:
+            raise ValueError(f"cannot interpret serial line: {serial_line}") from e

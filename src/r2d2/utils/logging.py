@@ -1,7 +1,7 @@
-import logging
 import json
+import logging
 import sys
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 class JsonFormatter(logging.Formatter):
@@ -49,7 +49,7 @@ class LoggerMixin:
         message: str,
         details: Optional[Dict[str, Any]] = None,
         error: Optional[Exception] = None,
-        level: int = logging.INFO
+        level: int = logging.INFO,
     ) -> None:
         if not hasattr(self, "logger"):
             raise ValueError(f"{self.whoami()} must have self.logger variable")

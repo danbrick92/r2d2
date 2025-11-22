@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from logging import Logger
 
+from r2d2.config.config import Config
 from r2d2.utils.logging import LoggerMixin
 from r2d2.utils.mqtt import MQTTClient
-from r2d2.config.config import Config
 
 
 class BaseNode(ABC, LoggerMixin):

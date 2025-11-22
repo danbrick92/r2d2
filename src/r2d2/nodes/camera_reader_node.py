@@ -1,14 +1,14 @@
-from typing import Union
 import logging
+from typing import Union
 
 import numpy as np
 from cv2 import VideoCapture  # pylint: disable=no-name-in-module
 
-from r2d2.states.camera_state import CameraState
-from r2d2.utils.mqtt import MQTTClient
-from r2d2.utils.loop_operation import LoopOperationMixin
-from r2d2.nodes.base_node import BaseNode
 from r2d2.config.config import Config
+from r2d2.nodes.base_node import BaseNode
+from r2d2.states.camera_state import CameraState
+from r2d2.utils.loop_operation import LoopOperationMixin
+from r2d2.utils.mqtt import MQTTClient
 
 
 class CameraReaderNode(BaseNode, LoopOperationMixin):
@@ -21,11 +21,7 @@ class CameraReaderNode(BaseNode, LoopOperationMixin):
         cam_index: int = 0,
         topic_name: str = "r2d2/camera_read_state",
     ) -> None:
-        super().__init__(
-            mqtt_client,
-            logger,
-            config
-        )
+        super().__init__(mqtt_client, logger, config)
         self.rate = rate
         self.cam_index = cam_index
         self.cam: Union[VideoCapture, None] = None
@@ -38,7 +34,7 @@ class CameraReaderNode(BaseNode, LoopOperationMixin):
         await self.loop(
             async_func=self._read,
             rate=self.rate,
-            catchup=False  # worst that happens is we skip frames
+            catchup=False,  # worst that happens is we skip frames
         )
 
     async def cleanup(self) -> None:
@@ -73,7 +69,7 @@ class CameraReaderNode(BaseNode, LoopOperationMixin):
             self.log(
                 message="Failed to capture image",
                 details={"cam_index": self.cam_index},
-                level=logging.ERROR
+                level=logging.ERROR,
             )
             raise ValueError("Failed to capture image")
 

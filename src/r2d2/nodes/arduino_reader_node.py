@@ -1,13 +1,13 @@
-from typing import Dict, Union
 import asyncio
 from logging import Logger
+from typing import Dict, Union
 
+from r2d2.config.config import Config
 from r2d2.nodes.base_node import BaseNode
 from r2d2.serial_readers.base_serial_reader import BaseSerialReader
+from r2d2.utils.loop_operation import LoopOperationMixin
 from r2d2.utils.mqtt import MQTTClient
 from r2d2.utils.serial_initializer_route import SerialInitializerRoute
-from r2d2.config.config import Config
-from r2d2.utils.loop_operation import LoopOperationMixin
 
 
 class ArduinoReaderNode(BaseNode, LoopOperationMixin):
@@ -18,7 +18,7 @@ class ArduinoReaderNode(BaseNode, LoopOperationMixin):
         config: Config,
         serial_reader: BaseSerialReader,
         router: Dict[str, SerialInitializerRoute],
-        rate: float
+        rate: float,
     ) -> None:
         super().__init__(mqtt_client, logger, config)
         self.serial_reader = serial_reader
@@ -36,7 +36,7 @@ class ArduinoReaderNode(BaseNode, LoopOperationMixin):
         await self.loop(
             async_func=self._read,
             rate=self.rate,
-            catchup=True  # serial queue gets backed up otherwise
+            catchup=True,  # serial queue gets backed up otherwise
         )
 
     async def cleanup(self) -> None:

@@ -1,5 +1,7 @@
 from logging import Logger
+
 import serial  # type: ignore
+
 from r2d2.serial_readers.base_serial_reader import BaseSerialReader
 
 
@@ -9,7 +11,7 @@ class ArduinoSerialReader(BaseSerialReader):
         logger: Logger,
         port: str = "/dev/ttyACM0",
         baud_rate: int = 38400,
-        timeout: float = 1.0
+        timeout: float = 1.0,
     ) -> None:
         super().__init__(logger)
         self.arduino = serial.Serial(port=port, baudrate=baud_rate, timeout=timeout)

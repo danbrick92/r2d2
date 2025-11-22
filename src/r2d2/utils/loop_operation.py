@@ -1,7 +1,7 @@
-from typing import Callable, Dict, Any, Optional
-import time
 import asyncio
 import logging
+import time
+from typing import Any, Callable, Dict, Optional
 
 from r2d2.utils.logging import LoggerMixin
 
@@ -12,7 +12,8 @@ class LoopOperationMixin(LoggerMixin):
         async_func: Callable,
         rate: float,
         catchup: bool = False,
-        kwargs: Optional[Dict[str, Any]] = None) -> None:
+        kwargs: Optional[Dict[str, Any]] = None,
+    ) -> None:
         if kwargs is None:
             kwargs = {}
 
@@ -26,11 +27,8 @@ class LoopOperationMixin(LoggerMixin):
             else:
                 self.log(
                     "Rate too fast",
-                    details={
-                        "rate": rate,
-                        "to_sleep": to_sleep
-                    },
-                    level=logging.WARNING
+                    details={"rate": rate, "to_sleep": to_sleep},
+                    level=logging.WARNING,
                 )
                 if catchup:
                     await self.catchup()

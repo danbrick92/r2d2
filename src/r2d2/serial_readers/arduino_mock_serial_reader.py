@@ -1,18 +1,15 @@
 import asyncio
-from logging import Logger
 import time
 from copy import deepcopy
+from logging import Logger
 from typing import Dict
+
 from r2d2.serial_readers.base_serial_reader import BaseSerialReader
 
 
 class ArduinoMockSerialReader(BaseSerialReader):
 
-    def __init__(
-        self,
-        logger: Logger,
-        rate: float
-    ) -> None:
+    def __init__(self, logger: Logger, rate: float) -> None:
         super().__init__(logger)
         self.rate = rate
         self.queue: Dict[float, str] = {}
