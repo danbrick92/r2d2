@@ -1,0 +1,14 @@
+{
+    // Enable Pylint (new VS Code mechanism)
+    "pylint.enable": true,
+
+    // Arguments passed directly to the Pylint CLI
+    "pylint.args": [
+        "--load-plugins=pylint_pydantic",
+        "--max-line-length=120",
+        "--disable=missing-module-docstring",
+        "--disable=missing-class-docstring",
+        "--disable=missing-function-docstring",
+        "--disable=too-few-public-methods"
+    ]
+}

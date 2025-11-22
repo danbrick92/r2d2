@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from states.serial_initializer import SerialInitializer
+
+from r2d2.states.serial_initializer import SerialInitializer
 
 
 class SerialInitializerRoute(BaseModel):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from states.serial_initializer import SerialInitializer
+from r2d2.states.serial_initializer import SerialInitializer
 
 
 class BackLed(BaseModel, SerialInitializer):
@@ -15,12 +15,6 @@ class BackLed(BaseModel, SerialInitializer):
             parts = s.split(" ")
             if len(parts) != 3:
                 raise ValueError(f"incorrect num parts: {len(parts)}")
-            return BackLed(
-                red=int(parts[0]),
-                green=int(parts[1]),
-                blue=int(parts[2])
-            )
+            return BackLed(red=int(parts[0]), green=int(parts[1]), blue=int(parts[2]))
         except Exception as e:
-            raise ValueError(
-                f"cannot interpret serial line: {serial_line}"
-            ) from e
+            raise ValueError(f"cannot interpret serial line: {serial_line}") from e

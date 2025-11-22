@@ -1,0 +1,43 @@
+[project]
+name = "danbrick92.r2d2"
+dynamic = ["version"]
+dependencies = [
+  "opencv-python",
+  "paho-mqtt",
+  "pydantic",
+  "pyserial"
+]
+description = "Build your own R2D2"
+requires-python = ">= 3.13"
+authors = [
+  {name = "Dan Brickner"}
+]
+readme = "README.md"
+
+[project.optional-dependencies]
+test = [
+  "black",
+  "isort",
+  "mypy",
+  "pylint",
+  "pylint-pydantic",
+  "pytest",
+  "ruff"
+]
+
+[tool.pylint.main]
+max-line-length = 120
+load-plugins = [
+    "pylint_pydantic",
+]
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "too-few-public-methods"
+]
+
+
+

@@ -35,14 +35,13 @@ class Hw123(BaseModel):
     def gyro_dps(self) -> tuple[float, float, float]:
         """
         Gyro values are typically scaled integers.
-        This assumes ±250°/s range, where 131 LSB = 1°/s.
-        Adjust if your IMU uses a different scale.
+        This assumes ±250°/s range, where 131 LSB = 1°/s
         """
-        SCALE = 131.0
+        scale = 131.0
         return (
-            self.gyro.x / SCALE,
-            self.gyro.y / SCALE,
-            self.gyro.z / SCALE,
+            self.gyro.x / scale,
+            self.gyro.y / scale,
+            self.gyro.z / scale,
         )
 
     @property

@@ -1,5 +1,5 @@
-import time
 import asyncio
+import time
 from copy import deepcopy
 from typing import Dict
 
@@ -8,7 +8,7 @@ class ArduinoMockSerialReader:
 
     def __init__(self) -> None:
         super().__init__()
-        self.rate = .5
+        self.rate = 0.5
         self.queue: Dict[float, str] = {}
 
     async def start(self) -> None:

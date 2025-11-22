@@ -1,7 +1,8 @@
 from typing import Dict
-from serial_readers.base_serial_reader import BaseSerialReader
-from utils.serial_initializer_route import SerialInitializerRoute
-from utils.mqtt import MQTTClient
+
+from r2d2.serial_readers.base_serial_reader import BaseSerialReader
+from r2d2.utils.mqtt import MQTTClient
+from r2d2.utils.serial_initializer_route import SerialInitializerRoute
 
 
 class ArduinoReader:
@@ -9,7 +10,7 @@ class ArduinoReader:
         self,
         reader: BaseSerialReader,
         router: Dict[str, SerialInitializerRoute],
-        mqtt: MQTTClient
+        mqtt: MQTTClient,
     ) -> None:
         self.reader = reader
         self.router = router

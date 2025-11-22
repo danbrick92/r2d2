@@ -11,7 +11,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
+    print(msg.topic + " " + str(msg.payload))
 
 
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
