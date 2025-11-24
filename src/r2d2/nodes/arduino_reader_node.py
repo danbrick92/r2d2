@@ -1,35 +1,26 @@
 import asyncio
-from logging import Logger
-from typing import Dict, Union
+from typing import Union
 
-from r2d2.config.config import Config
 from r2d2.nodes.base_node import BaseNode
 from r2d2.serial_readers.base_serial_reader import BaseSerialReader
+from r2d2.utils.context import Context
 from r2d2.utils.loop_operation import LoopOperationMixin
-from r2d2.utils.mqtt import MQTTClient
-from r2d2.utils.serial_initializer_route import SerialInitializerRoute
 
 
 class ArduinoReaderNode(BaseNode, LoopOperationMixin):
-    def __init__(
-        self,
-        mqtt_client: MQTTClient,
-        logger: Logger,
-        config: Config,
-        serial_reader: BaseSerialReader,
-        router: Dict[str, SerialInitializerRoute],
-        rate: float,
-    ) -> None:
-        super().__init__(mqtt_client, logger, config)
+    def __init__(self, context: Context, serial_reader: BaseSerialReader) -> None:
+        super().__init__(context)
         self.serial_reader = serial_reader
-        self.router = router
         self.serial_reader_task: Union[None, asyncio.Task] = None
-        self.rate = rate
+        self.router = self.config.arduino_reader_node.router
+        self.rate = self.config.arduino_reader_node.rate
 
     async def init(self) -> None:
         self.log(f"Starting serial reader: {self.serial_reader.whoami()}")
         async with asyncio.TaskGroup():
             self.serial_reader_task = asyncio.create_task(self.serial_reader.start())
+        await self.context.mqtt_manager.connect_mqtt_client(self.mqtt_client)
+        self.mqtt_client.loop_start()
 
     async def run(self) -> None:
         self.log("Running node")
@@ -43,6 +34,10 @@ class ArduinoReaderNode(BaseNode, LoopOperationMixin):
         if self.serial_reader_task:
             self.log(f"Cancelling serial reader task: {self.serial_reader.whoami()}")
             self.serial_reader_task.cancel()
+        try:
+            self.mqtt_client.loop_stop()
+        except Exception:  # pylint: disable=broad-except
+            pass
 
     async def catchup(self) -> None:
         await self.serial_reader.catchup()

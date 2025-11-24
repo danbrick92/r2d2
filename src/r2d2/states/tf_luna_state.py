@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from r2d2.states.serial_initializer import SerialInitializer
+from r2d2.utils.serial_initializer import SerialInitializer
 
 
 class TfLunaState(BaseModel, SerialInitializer):

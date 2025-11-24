@@ -29,12 +29,10 @@ def setup_logging(level: int = logging.INFO) -> logging.Logger:
     logger = logging.getLogger()
     logger.setLevel(level)
 
-    # Prevent duplicate handlers if called multiple times
-    if not logger.handlers:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(level)
-        console_handler.setFormatter(JsonFormatter())
-        logger.addHandler(console_handler)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(level)
+    console_handler.setFormatter(JsonFormatter())
+    logger.addHandler(console_handler)
 
     return logger
 

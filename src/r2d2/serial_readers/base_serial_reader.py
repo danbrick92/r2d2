@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from logging import Logger
 
-from r2d2.utils.logging import LoggerMixin
+from r2d2.utils.context import Context, ContextMixin
 
 
-class BaseSerialReader(ABC, LoggerMixin):
-    def __init__(self, logger: Logger) -> None:
-        self.logger = logger
+class BaseSerialReader(ABC, ContextMixin):
+    def __init__(self, context: Context) -> None:
+        self.set_vars(context, set_mqtt_client=False)
 
     async def start(self) -> None:
         pass

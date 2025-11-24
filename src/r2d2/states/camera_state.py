@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 class CameraState(BaseModel):
     image: np.ndarray = Field(..., description="The captured image")
 
+    model_config = {"arbitrary_types_allowed": True}
+
     def to_json(self) -> str:
         return json.dumps(self.image.tolist())  # pylint: disable=no-member
 

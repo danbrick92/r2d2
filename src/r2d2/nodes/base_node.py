@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
-from logging import Logger
 
-from r2d2.config.config import Config
-from r2d2.utils.logging import LoggerMixin
-from r2d2.utils.mqtt import MQTTClient
+from r2d2.utils.context import Context, ContextMixin
 
 
-class BaseNode(ABC, LoggerMixin):
-    def __init__(self, mqtt_client: MQTTClient, logger: Logger, config: Config) -> None:
-        self.mqtt_client = mqtt_client
-        self.logger = logger
-        self.config = config
+class BaseNode(ABC, ContextMixin):
+    def __init__(self, context: Context) -> None:
+        self.set_vars(context)
 
     @abstractmethod
     async def init(self) -> None:
